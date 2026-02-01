@@ -31,15 +31,15 @@ class _PageAccueilState extends State<PageAccueil> {
   int score = 0;
   int fantome = nombreParLigne*2-2;
   String directionFantome = "gauche";
+  Timer? timerJeu;
 
   void lancementPartie(){
     if (preJeu){
       preJeu = false;
       ajoutNourriture();
       Duration duration = Duration(milliseconds: 120);
-      Timer.periodic(duration, (timer){
+      timerJeu = Timer.periodic(duration, (timer){
         bougerFantome();
-        
         setState(() {
          boucheFermee= !boucheFermee;
         });
@@ -48,84 +48,10 @@ class _PageAccueilState extends State<PageAccueil> {
           score++;
         }
         if(positionJoueur==fantome){
-         setState(() {
-           positionJoueur = -1;
-         });
-          showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (BuildContext context){
-              return AlertDialog(
-                title: Center(child: Text("Vous êtes mort"),),
-                content: Text("Votre Score: $score"),
-                actions: [
-                 GestureDetector(
-                   onTap: (){
-                     setState(() {
-                        positionJoueur = nombreParLigne * 15 + 1;
-                        fantome = nombreParLigne*2-2;
-                        preJeu = false;
-                        boucheFermee = false;
-                        direction = "droite";
-                        nourriture.clear();
-                        ajoutNourriture();
-                        score = 0;
-                        Navigator.pop(context);
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.all(10.0),
-                      child: const Text("Recommencer"),
-                    ),
-                  ),
-                ],
-              );
-            }
-          );
+          finPartie("Vous avez perdu...");
         }
         if(score == 87){
-          setState(() {
-            positionJoueur = -1;
-          });
-          showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (BuildContext context){
-              return AlertDialog(
-                title: Center(child: Text("Vous avez gagné"),),
-                content: Text("Votre Score: $score"),
-                actions: [
-                  GestureDetector(
-                    onTap: (){
-                      setState(() {
-                        positionJoueur = nombreParLigne * 15 + 1;
-                        fantome = nombreParLigne*2-2;
-                        preJeu = false;
-                        boucheFermee = false;
-                        direction = "droite";
-                        nourriture.clear();
-                        ajoutNourriture();
-                        score = 0;
-                        Navigator.pop(context);
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.all(10.0),
-                      child: const Text("Rejouer"),
-                    ),
-                  ),
-                ],
-              );
-            }
-          );
+          finPartie("Vous avez gagné !");
         }
         switch (direction){
           case "gauche":
@@ -144,7 +70,47 @@ class _PageAccueilState extends State<PageAccueil> {
       });
     }  
   }
-  
+  void reinitialisationJeu(){
+    positionJoueur = nombreParLigne * 15 + 1;
+    fantome = nombreParLigne*2-2;
+    preJeu = true;
+    boucheFermee = false;
+    direction = "droite";
+    nourriture.clear();
+    score = 0;
+  }
+  void finPartie(String titre){
+    timerJeu?.cancel();
+    timerJeu = null;
+    setState(() {
+      positionJoueur = -1;
+    });
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (_) => AlertDialog(
+          title: Center(child: Text(titre),),
+          content: Text("Votre Score: $score"),
+          actions: [
+            GestureDetector(
+              onTap: (){
+                Navigator.pop(context);
+                reinitialisationJeu();
+                lancementPartie();
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.all(10.0),
+                child: const Text("Rejouer"),
+              ),
+            ),
+          ],
+      ),
+    );
+  }
   void bougerFantome (){
     switch (directionFantome){
       case "gauche":
